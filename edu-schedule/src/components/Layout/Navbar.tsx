@@ -61,8 +61,8 @@ export function Navbar() {
           </h1>
         </div>
         
-        <div className="flex items-center gap-2">
-          <ExportMenu 
+        <div className="flex items-center gap-3">
+          <ExportMenu
             isOpen={exportOpen} 
             onToggle={handleExportToggle} 
           />
@@ -84,13 +84,13 @@ export function Navbar() {
               <img 
                 src="https://img.icons8.com/?size=100&id=1PQfP9t1iMCJ&format=png&color=000000" 
                 alt="Dark Mode" 
-                className="w-5 h-5"
+                className="w-8 h-8"
               />
             ) : (
               <img 
                 src="https://img.icons8.com/?size=100&id=112286&format=png&color=000000" 
                 alt="Light Mode" 
-                className="w-5 h-5"
+                className="w-8 h-8"
               />
             )}
           </button>

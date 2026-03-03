@@ -36,18 +36,29 @@ export function EntryForm({ onSubmit, editingEntry, onCancelEdit }: EntryFormPro
   const [day, setDay] = useState(editingEntry?.day || '');
   const [startTime, setStartTime] = useState(editingEntry?.startTime || '');
   const [endTime, setEndTime] = useState(editingEntry?.endTime || '');
-  const [color, setColor] = useState(editingEntry?.color || '');
+  const [color, setColor] = useState(editingEntry?.color || getRandomColor());
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showErrorDialog, setShowErrorDialog] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Set random color if no color is selected
+  // Sync form fields whenever the entry being edited changes
   useEffect(() => {
-    if (!color && !editingEntry) {
+    if (editingEntry) {
+      setSubject(editingEntry.subject);
+      setDay(editingEntry.day);
+      setStartTime(editingEntry.startTime);
+      setEndTime(editingEntry.endTime);
+      setColor(editingEntry.color);
+    } else {
+      setSubject('');
+      setDay('');
+      setStartTime('');
+      setEndTime('');
       setColor(getRandomColor());
     }
-  }, [color, editingEntry]);
+    setShowColorPicker(false);
+  }, [editingEntry]);
 
   // Auto-set end time to next hour when start time changes
   const handleStartTimeChange = (value: string) => {
@@ -91,7 +102,7 @@ export function EntryForm({ onSubmit, editingEntry, onCancelEdit }: EntryFormPro
       setDay('');
       setStartTime('');
       setEndTime('');
-      setColor(PRESET_COLORS[0]);
+      setColor(getRandomColor());
     }
   };
 
@@ -110,7 +121,7 @@ export function EntryForm({ onSubmit, editingEntry, onCancelEdit }: EntryFormPro
 
   return (
     <>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-3 lg:space-y-4">
         <div className="space-y-2">
           <label htmlFor="subject" className="text-sm font-medium">
             Subject

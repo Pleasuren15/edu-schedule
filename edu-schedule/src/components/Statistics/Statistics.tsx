@@ -43,18 +43,18 @@ export function Statistics() {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
       {stats.map((stat) => (
         <div
           key={stat.label}
-          className="p-4 text-white text-center"
+          className="p-2 md:p-4 text-white text-center"
           style={{ 
             borderRadius: 0,
             background: gradientBackgrounds[stat.gradientIndex],
           }}
         >
-          <div className="text-2xl font-bold">{stat.value}</div>
-          <div className="text-sm opacity-90">{stat.label}</div>
+          <div className="text-lg md:text-2xl font-bold">{stat.value}</div>
+          <div className="text-[10px] md:text-sm opacity-90">{stat.label}</div>
         </div>
       ))}
     </div>

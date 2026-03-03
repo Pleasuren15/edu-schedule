@@ -48,6 +48,8 @@ export function MobileModal({
   const [endTime, setEndTime] = useState(editingEntry?.endTime || '');
   const [color, setColor] = useState(editingEntry?.color || '');
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   // Reset form when modal opens with new preselected values
   useEffect(() => {
@@ -78,12 +80,14 @@ export function MobileModal({
     e.preventDefault();
     
     if (startTime >= endTime) {
-      alert('End time must be after start time');
+      setErrorMessage('End time must be after start time');
+      setShowErrorDialog(true);
       return;
     }
     
     if (!subject || !day || !startTime || !endTime) {
-      alert('Please fill in all fields');
+      setErrorMessage('Please fill in all fields');
+      setShowErrorDialog(true);
       return;
     }
     
@@ -241,6 +245,26 @@ export function MobileModal({
               </Button>
               <Button onClick={confirmCancel} className="bg-[var(--accent-primary)] cursor-pointer" style={{ borderRadius: 0 }}>
                 Discard
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Error Dialog */}
+      <Dialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
+        <DialogContent style={{ borderRadius: 0, backgroundColor: 'var(--bg-surface)' }}>
+          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 50 }} />
+          <div style={{ position: 'relative', zIndex: 51 }}>
+            <DialogHeader>
+              <DialogTitle>Validation Error</DialogTitle>
+              <p className="text-sm text-[var(--text-secondary)]">
+                {errorMessage}
+              </p>
+            </DialogHeader>
+            <div className="flex justify-end">
+              <Button onClick={() => setShowErrorDialog(false)} className="bg-[var(--accent-primary)] cursor-pointer" style={{ borderRadius: 0 }}>
+                OK
               </Button>
             </div>
           </div>

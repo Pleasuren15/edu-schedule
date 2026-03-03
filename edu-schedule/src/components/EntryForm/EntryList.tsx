@@ -35,9 +35,9 @@ export function EntryList({ onEdit }: EntryListProps) {
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="font-medium">Your Entries ({entries.length})</h3>
+    <div className="space-y-2 lg:space-y-3">
+      <div className="flex justify-between items-center mb-2 lg:mb-4">
+        <h3 className="font-medium text-sm lg:text-base">Your Entries ({entries.length})</h3>
         {entries.length > 0 && (
           <button
             onClick={() => setShowClearConfirm(true)}
@@ -48,7 +48,7 @@ export function EntryList({ onEdit }: EntryListProps) {
         )}
       </div>
 
-      <div className="space-y-2 max-h-[300px] overflow-y-auto">
+      <div className="space-y-2 max-h-[200px] lg:max-h-[300px] overflow-y-auto">
         {entries.map(entry => {
           const day = DAYS.find(d => d.id === entry.day);
           return (
