@@ -40,11 +40,24 @@ export function ExportMenu({ isOpen, onToggle }: ExportMenuProps) {
         mimeType = 'text/calendar';
         break;
       case 'png':
-      case 'pdf':
-        const element = document.getElementById('timetable-grid');
+      case 'pdf': {
+        const element = document.getElementById('export-grid') as HTMLElement | null;
         if (!element) return;
-        
-        const canvas = await html2canvas(element);
+
+        const bgColor = getComputedStyle(document.documentElement)
+          .getPropertyValue('--bg-primary').trim() || '#ffffff';
+
+        const canvas = await html2canvas(element, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          scrollX: 0,
+          scrollY: 0,
+          backgroundColor: bgColor,
+          width: element.scrollWidth,
+          height: element.scrollHeight,
+        });
+
         if (format === 'png') {
           const link = document.createElement('a');
           link.download = 'schedule.png';
@@ -52,11 +65,15 @@ export function ExportMenu({ isOpen, onToggle }: ExportMenuProps) {
           link.click();
         } else {
           const imgData = canvas.toDataURL('image/png');
-          const pdf = new jsPDF('landscape');
-          pdf.addImage(imgData, 'PNG', 0, 0, 297, 210);
+          const imgW = canvas.width / 2;
+          const imgH = canvas.height / 2;
+          const isLandscape = imgW > imgH;
+          const pdf = new jsPDF({ orientation: isLandscape ? 'landscape' : 'portrait', unit: 'px', format: [imgW, imgH] });
+          pdf.addImage(imgData, 'PNG', 0, 0, imgW, imgH);
           pdf.save('schedule.pdf');
         }
         return;
+      }
       default:
         return;
     }

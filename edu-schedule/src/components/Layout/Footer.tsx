@@ -70,7 +70,8 @@ export function Footer() {
 
   return (
     <>
-      <footer className="bg-[var(--bg-surface)] border-t border-[var(--border-color)]">
+      {/* Hidden on mobile — bottom nav replaces it */}
+      <footer className="hidden md:block bg-[var(--bg-surface)] border-t border-[var(--border-color)]">
         <div className="w-full max-w-[80%] mx-auto px-4 py-3 flex items-center justify-between">
           <span className="text-base text-[var(--text-secondary)]">TimeGrid © {new Date().getFullYear()}</span>
 

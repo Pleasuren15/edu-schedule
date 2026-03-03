@@ -9,7 +9,7 @@ export function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen flex flex-col bg-[var(--bg-primary)] text-[var(--text-primary)] transition-colors">
       <Navbar />
-      <main className="flex-1 p-4 md:p-6">
+      <main className="flex-1 md:p-6">
         {children}
       </main>
       <Footer />
