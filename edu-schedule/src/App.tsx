@@ -84,6 +84,8 @@ function App() {
                 onSubmit={handleSubmit} 
                 editingEntry={editingEntry}
                 onCancelEdit={handleCancelEdit}
+                preselectedDay={preselectedDay}
+                preselectedStartTime={preselectedStartTime}
               />
             </div>
 

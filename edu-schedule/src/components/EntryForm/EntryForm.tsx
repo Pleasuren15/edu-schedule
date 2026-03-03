@@ -29,9 +29,11 @@ interface EntryFormProps {
   onSubmit: (entry: Omit<Entry, 'id'>) => void;
   editingEntry: Entry | null;
   onCancelEdit: () => void;
+  preselectedDay?: string;
+  preselectedStartTime?: string;
 }
 
-export function EntryForm({ onSubmit, editingEntry, onCancelEdit }: EntryFormProps) {
+export function EntryForm({ onSubmit, editingEntry, onCancelEdit, preselectedDay, preselectedStartTime }: EntryFormProps) {
   const [subject, setSubject] = useState(editingEntry?.subject || '');
   const [day, setDay] = useState(editingEntry?.day || '');
   const [startTime, setStartTime] = useState(editingEntry?.startTime || '');
@@ -42,7 +44,7 @@ export function EntryForm({ onSubmit, editingEntry, onCancelEdit }: EntryFormPro
   const [showErrorDialog, setShowErrorDialog] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Sync form fields whenever the entry being edited changes
+  // Sync form fields whenever the entry being edited or preselection changes
   useEffect(() => {
     if (editingEntry) {
       setSubject(editingEntry.subject);
@@ -52,13 +54,20 @@ export function EntryForm({ onSubmit, editingEntry, onCancelEdit }: EntryFormPro
       setColor(editingEntry.color);
     } else {
       setSubject('');
-      setDay('');
-      setStartTime('');
-      setEndTime('');
+      setDay(preselectedDay || '');
+      setStartTime(preselectedStartTime || '');
+      // Auto-set end time to one hour after preselected start
+      if (preselectedStartTime) {
+        const hour = parseInt(preselectedStartTime.split(':')[0]);
+        const nextHour = (hour + 1).toString().padStart(2, '0');
+        setEndTime(`${nextHour}:00`);
+      } else {
+        setEndTime('');
+      }
       setColor(getRandomColor());
     }
     setShowColorPicker(false);
-  }, [editingEntry]);
+  }, [editingEntry, preselectedDay, preselectedStartTime]);
 
   // Auto-set end time to next hour when start time changes
   const handleStartTimeChange = (value: string) => {

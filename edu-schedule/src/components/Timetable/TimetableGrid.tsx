@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { Trash2 } from 'lucide-react';
 import { DAYS, type DayId } from '../../constants';
 import { TIME_SLOTS } from '../../constants/days';
 import { useEntries } from '../../hooks';
@@ -11,6 +12,14 @@ interface TimetableGridProps {
   onZoomOut?: () => void;
 }
 
+interface DragShadow {
+  subject: string;
+  startTime: string;
+  endTime: string;
+  color: string;
+  rowSpan: number;
+}
+
 // Calculate how many hours an entry spans
 const getDurationSlots = (startTime: string, endTime: string): number => {
   const startHour = parseInt(startTime.split(':')[0]);
@@ -19,13 +28,26 @@ const getDurationSlots = (startTime: string, endTime: string): number => {
 };
 
 export function TimetableGrid({ onCellClick, zoom = 100, onZoomIn, onZoomOut }: TimetableGridProps) {
-  const { entries, updateEntry } = useEntries();
+  const { entries, updateEntry, deleteEntry } = useEntries();
   const [dragOverCell, setDragOverCell] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isOverBin, setIsOverBin] = useState(false);
+  const [dragShadow, setDragShadow] = useState<DragShadow | null>(null);
+  const [shadowPos, setShadowPos] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // onDrag fires continuously during a native drag with live clientX/clientY.
+  // Filter out the terminal event where the browser fires (0, 0) on release.
+  const handleDrag = (e: React.DragEvent) => {
+    if (e.clientX === 0 && e.clientY === 0) return;
+    setShadowPos({ x: e.clientX, y: e.clientY });
+  };
 
   const handleDrop = (e: React.DragEvent, dayId: DayId, time: string) => {
     e.preventDefault();
     setDragOverCell(null);
+    setIsDragging(false);
+    setDragShadow(null);
     try {
       const data = e.dataTransfer.getData('application/json');
       if (!data) return;
@@ -47,6 +69,21 @@ export function TimetableGrid({ onCellClick, zoom = 100, onZoomIn, onZoomOut }: 
     }
   };
 
+  const handleBinDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsOverBin(false);
+    setIsDragging(false);
+    setDragShadow(null);
+    try {
+      const data = e.dataTransfer.getData('application/json');
+      if (!data) return;
+      const entry = JSON.parse(data);
+      deleteEntry(entry.id);
+    } catch (err) {
+      console.error('Bin drop error:', err);
+    }
+  };
+
   const handleDragOver = (e: React.DragEvent, dayId: DayId, time: string) => {
     e.preventDefault();
     setDragOverCell(`${dayId}-${time}`);
@@ -64,8 +101,7 @@ export function TimetableGrid({ onCellClick, zoom = 100, onZoomIn, onZoomOut }: 
 
   // Calculate row span for entries
   const getEntryRowSpan = (entry: typeof entries[0]): number => {
-    const duration = getDurationSlots(entry.startTime, entry.endTime);
-    return duration;
+    return getDurationSlots(entry.startTime, entry.endTime);
   };
 
   const CELL_HEIGHT = 50;
@@ -73,8 +109,7 @@ export function TimetableGrid({ onCellClick, zoom = 100, onZoomIn, onZoomOut }: 
 
   return (
     <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-      <div className="min-w-[700px] md:min-w-auto">
-        {/* Header row */}
+      <div className="min-w-[700px] md:min-w-auto">        {/* Header row */}
         <div className="grid grid-cols-[80px_repeat(7,1fr)] border-b border-[var(--border-color)]">
           <div className="bg-[var(--bg-surface)] p-2 flex items-center justify-center">
             <div className="flex items-center gap-1">
@@ -139,9 +174,9 @@ export function TimetableGrid({ onCellClick, zoom = 100, onZoomIn, onZoomOut }: 
                 return (
                   <div
                     key={cellId}
-                    className={`border-r border-b border-[var(--border-color)] cursor-pointer ${
+                    className={`border-r border-b border-[var(--border-color)] cursor-grab active:cursor-grabbing transition-opacity ${
                       isDragOver ? 'border-4 border-solid border-[var(--accent-primary)]' : ''
-                    }`}
+                    } ${isDragging && dragShadow?.subject === entry.subject ? 'opacity-40' : ''}`}
                     style={{
                       gridColumn: col,
                       gridRow: `${row} / span ${rowSpan}`,
@@ -153,8 +188,31 @@ export function TimetableGrid({ onCellClick, zoom = 100, onZoomIn, onZoomOut }: 
                     onClick={() => handleCellClick(day.id, time)}
                     draggable
                     onDragStart={(e) => {
+                      // Hide the native ghost image
+                      const ghost = document.createElement('div');
+                      ghost.style.position = 'absolute';
+                      ghost.style.top = '-9999px';
+                      document.body.appendChild(ghost);
+                      e.dataTransfer.setDragImage(ghost, 0, 0);
+                      setTimeout(() => document.body.removeChild(ghost), 0);
+
                       e.dataTransfer.setData('application/json', JSON.stringify(entry));
                       e.dataTransfer.effectAllowed = 'move';
+                      setShadowPos({ x: e.clientX, y: e.clientY });
+                      setDragShadow({
+                        subject: entry.subject,
+                        startTime: entry.startTime,
+                        endTime: entry.endTime,
+                        color: entry.color,
+                        rowSpan,
+                      });
+                      setIsDragging(true);
+                    }}
+                    onDrag={handleDrag}
+                    onDragEnd={() => {
+                      setIsDragging(false);
+                      setIsOverBin(false);
+                      setDragShadow(null);
                     }}
                   >
                     <div className="p-2 text-white text-xs font-medium h-full flex flex-col justify-center">
@@ -193,6 +251,46 @@ export function TimetableGrid({ onCellClick, zoom = 100, onZoomIn, onZoomOut }: 
           ))}
         </div>
       </div>
+
+      {/* Delete bin — always visible, lights up when dragging over */}
+      <div
+        className={`mt-3 flex items-center justify-center gap-3 border-2 border-dashed transition-all duration-150 select-none ${
+          isDragging && isOverBin
+            ? 'border-red-500 bg-red-500/20 text-red-400 cursor-copy'
+            : isDragging
+            ? 'border-red-400/60 bg-red-500/10 text-red-400/70 cursor-copy'
+            : 'border-[var(--border-color)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] cursor-default'
+        }`}
+        style={{ height: 56 }}
+        onDragOver={(e) => { e.preventDefault(); setIsOverBin(true); }}
+        onDragLeave={() => setIsOverBin(false)}
+        onDrop={handleBinDrop}
+      >
+        <Trash2 size={20} />
+        <span className="text-sm font-medium">Drop here to delete</span>
+      </div>
+
+      {/* Custom drag shadow — follows the cursor */}
+      {isDragging && dragShadow && (
+        <div
+          className="fixed pointer-events-none z-50 rounded shadow-2xl opacity-90"
+          style={{
+            left: shadowPos.x + 12,
+            top: shadowPos.y + 12,
+            width: 140,
+            height: dragShadow.rowSpan * CELL_HEIGHT - 4,
+            backgroundColor: dragShadow.color,
+            boxShadow: `0 8px 32px 0 ${dragShadow.color}99, 0 2px 8px rgba(0,0,0,0.4)`,
+            transform: 'rotate(2deg) scale(1.04)',
+            transition: 'box-shadow 0.1s',
+          }}
+        >
+          <div className="p-2 text-white text-xs font-medium h-full flex flex-col justify-center">
+            <div className="font-semibold truncate">{dragShadow.subject}</div>
+            <div className="opacity-80">{dragShadow.startTime} - {dragShadow.endTime}</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
